@@ -63,7 +63,7 @@ filtro = cv2.GaussianBlur(gs, (3, 3), 0)
 binaria = cv2.adaptiveThreshold(
     filtro, 255,
     cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-    cv2.THRESH_BINARY,  251, 10
+    cv2.THRESH_BINARY,  301, 15
 )
 
 kernel = np.ones((2,2),np.uint8)
@@ -78,7 +78,7 @@ cerrada = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel_cierre, iterations=1)
 
 
 final = cv2.copyMakeBorder(
-    cerrada, 15, 15, 15, 15, cv2.BORDER_CONSTANT, value=255
+    binaria, 15, 15, 15, 15, cv2.BORDER_CONSTANT, value=255
 )
 
 
