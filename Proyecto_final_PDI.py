@@ -19,7 +19,7 @@ pytesseract.pytesseract.tesseract_cmd = r'D:\SOFTWARE\tesseract\tesseract.exe'
 #CONFIGURACION DE CAMARA
 
     # Abrir cámara
-cam = cv2.VideoCapture(0) 
+cam = cv2.VideoCapture(0)
 
     # Configuración deseada
 cam.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
@@ -36,37 +36,57 @@ print("  q para Salir")
 
 contador = 1
 
-################ PREPROCESAMIENTO DE IMAGEN
+################ PREPROCESAMIENTO DE IMAGEN #
 
 clahe = cv2.createCLAHE(clipLimit=1.5, tileGridSize=(8, 8))
 
 def procesamiento(imagen):
     
     # Escala de grises
-    gris = cv2.cvtColor(imagen, cv2.COLOR_BGR2GRAY)
+    gs = cv2.cvtColor(imagen, cv2.COLOR_BGR2GRAY)
+
+    #Escalamiento
+    img = cv2.resize(
+        gs,
+        None,
+        fx=2,
+        fy=2,
+        interpolation=cv2.INTER_CUBIC
+    )
+
+    # CLAHE
+    clahe = cv2.createCLAHE(
+        clipLimit=2.0,
+        tileGridSize=(8, 8)
+    )
+
+    contraste = clahe.apply(img)
+
+    #Eliminacion de ruido salt n pepper
+    mediana = cv2.medianBlur(img, 7)
 
     # Filtro gaussiano — suavizado
-    gauss = cv2.GaussianBlur(gris, (3, 3), 0)
-    
-    #Filtro mediana
-    #mediana= cv2.medianBlur(gauss, 3)
-    
-    #CLAHE — mejora contraste 
-    contraste = clahe.apply(gauss)
+    gauss = cv2.GaussianBlur(mediana, (3, 3), 0)
+
 
     #Umbral adaptativo gaussiano
     binaria = cv2.adaptiveThreshold(
-        contraste,
-        maxValue=255,
-        adaptiveMethod=cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-        thresholdType=cv2.THRESH_BINARY,
-        blockSize=15,
-        C=8
+        gauss,
+        255,
+        cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+        cv2.THRESH_BINARY,
+        151,
+        15
     )
 
     #Cierre morfológico
-    kernel = np.ones((3, 3), np.uint8)
-    final  = cv2.morphologyEx(binaria, cv2.MORPH_CLOSE, kernel, iterations=1)
+    kernel_cierre = cv2.getStructuringElement(cv2.MORPH_CROSS, (3, 3))
+    cerrada = cv2.morphologyEx(binaria, cv2.MORPH_CLOSE, kernel_cierre, iterations=1)
+
+    #borde
+    final = cv2.copyMakeBorder(
+    cerrada, 15, 15, 15, 15, cv2.BORDER_CONSTANT, value=255
+    )
 
     return final
 
