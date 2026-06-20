@@ -45,9 +45,21 @@ def procesamiento(imagen):
     # Escala de grises
     gs = cv2.cvtColor(imagen, cv2.COLOR_BGR2GRAY)
 
+    #Rotacion
+    fil = gs.shape[0]
+    col = gs.shape[1]
+
+    centro = (col // 2, fil // 2)  # y0,x0
+    angulo = 180.0
+    escala = 1.5
+
+    M = cv2.getRotationMatrix2D(centro, angulo, escala)  # matriz de rotacion
+
+    rotado = cv2.warpAffine(gs, M, (col, fil))
+
     #Escalamiento
     img = cv2.resize(
-        gs,
+        rotado,
         None,
         fx=2,
         fy=2,
@@ -63,7 +75,7 @@ def procesamiento(imagen):
     contraste = clahe.apply(img)
 
     #Eliminacion de ruido salt n pepper
-    mediana = cv2.medianBlur(img, 7)
+    mediana = cv2.medianBlur(contraste, 5)
 
     # Filtro gaussiano — suavizado
     gauss = cv2.GaussianBlur(mediana, (3, 3), 0)
@@ -85,7 +97,7 @@ def procesamiento(imagen):
 
     #borde
     final = cv2.copyMakeBorder(
-    cerrada, 15, 15, 15, 15, cv2.BORDER_CONSTANT, value=255
+    binaria, 15, 15, 15, 15, cv2.BORDER_CONSTANT, value=255
     )
 
     return final
@@ -93,7 +105,7 @@ def procesamiento(imagen):
 #####################################
 #                 OCR
 
-def ejecutar_ocr(imagen, idioma='spa', psm=6, oem=3, mostrar_detalle=True):
+def ejecutar_ocr(imagen, idioma='spa', psm=11, oem=3, mostrar_detalle=True):
         #reporta texto y confianza.
 
         custom_config = f'--oem {oem} --psm {psm} -l {idioma}'
