@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-#################### PROYECTO FINAL DE PDI ####################################
+"""PROYECTO FINAL DE PDI """
 
 #Importaciones
 import cv2
@@ -12,6 +12,7 @@ import pytesseract
 from pytesseract import Output
 import textwrap
 import difflib
+from jiwer import wer, cer
 
 #ADAPTAR LA DIRECCIÓN SEGÚN CORRESPONDA
 pytesseract.pytesseract.tesseract_cmd = r'D:\SOFTWARE\tesseract\tesseract.exe'
@@ -139,9 +140,6 @@ def ejecutar_ocr(imagen, idioma='spa', psm=11, oem=3, mostrar_detalle=True):
             'confianza_promedio': promedio,
             'texto_completo': ' '.join(palabras_detectadas)
         }
-    
-#imagen_final = None
-
 
 def procesar_y_reconocer(imagen, idioma='spa', psm=6, oem=3, mostrar_detalle=True):
     """
@@ -274,11 +272,57 @@ def graficar_texto_detectado(comparacion):
     plt.tight_layout()
     plt.show()
 
-#LOOP DE CAPTURA
-# ============ LOOP DE CAPTURA ============
+def evaluar_ocr(texto_real: str, texto_ocr: str):
+    """
+    Calcula métricas de OCR.
 
+    Args:
+        texto_real: Ground Truth
+        texto_ocr: Texto reconocido por OCR
+
+    Returns:
+        dict con CER, WER y accuracy
+    """
+
+    texto_real = texto_real.strip()
+    texto_ocr = texto_ocr.strip()
+
+    cer_valor = cer(texto_real, texto_ocr)
+    wer_valor = wer(texto_real, texto_ocr)
+
+    accuracy_caracteres = (1 - cer_valor) * 100
+    accuracy_palabras = (1 - wer_valor) * 100
+
+    return {
+        "CER": round(cer_valor, 4),
+        "WER": round(wer_valor, 4),
+        "Accuracy_Caracteres": round(accuracy_caracteres, 2),
+        "Accuracy_Palabras": round(accuracy_palabras, 2)
+    }
+
+
+"""LOOP DE CAPTURA"""
+
+#CONFIGURACION DE CAMARA
+
+    # Abrir cámara
 cam = cv2.VideoCapture(0)
+
+    # Configuración de amplitud de camara
+cam.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+cam.set(cv2.CAP_PROP_FPS, 60)
+
+if not cam.isOpened():
+    print("No se pudo abrir la cámara")
+    exit()
+
+print("Presiona:")
+print("  g para Guardar")
+print("  q para Salir")
+
 contador = 0
+
 imagen_final = None
 
 try:
@@ -310,6 +354,14 @@ try:
             # Tabla + gráficas comparativas
             tabla = mostrar_comparacion(comparacion)
             graficar_texto_detectado(comparacion)
+
+            #Evalaur texto original con el reconocido
+            ground_truth = "x"
+            ocr = "x"
+            resultado = evaluar_ocr(
+            ground_truth,
+            ocr)
+            print(resultado)
 
         elif tecla == ord('q'):
             break
